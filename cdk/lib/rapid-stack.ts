@@ -175,7 +175,9 @@ export class RapidStack extends cdk.Stack {
           documentProcessor.stateMachine.stateMachineArn,
         REVIEW_PROCESSING_STATE_MACHINE_ARN:
           reviewProcessor.stateMachine.stateMachineArn,
-        CHECKLIST_INLINE_MAP_CONCURRENCY: (props.parameters.checklistInlineMapConcurrency || 1).toString(),
+        CHECKLIST_INLINE_MAP_CONCURRENCY: (
+          props.parameters.checklistInlineMapConcurrency || 1
+        ).toString(),
         AMBIGUITY_DETECTION_QUEUE_URL: ambiguityProcessor.queue.queueUrl,
       },
       auth: auth, // Authインスタンスを渡す
@@ -275,15 +277,15 @@ export class RapidStack extends cdk.Stack {
     new cdk.CfnOutput(this, "TempBucketName", {
       value: s3TempStorage.bucket.bucketName,
     });
-    
+
     new cdk.CfnOutput(this, "BedrockRegion", {
       value: props.parameters.bedrockRegion,
     });
-    
+
     new cdk.CfnOutput(this, "DocumentProcessingModelId", {
       value: props.parameters.documentProcessingModelId,
     });
-    
+
     new cdk.CfnOutput(this, "ImageReviewModelId", {
       value: props.parameters.imageReviewModelId,
     });

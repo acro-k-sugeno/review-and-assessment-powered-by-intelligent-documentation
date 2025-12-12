@@ -492,8 +492,14 @@ def _extract_json_from_message(message: Any) -> Tuple[Optional[Dict[str, Any]], 
         json_str = json_match.group(1).strip()
         try:
             return json.loads(json_str), combined
-        except Exception as e:
-            logger.warning(f"Marker JSON parsing failed: {e}")
+        except Exception:
+            # JSON 内の無効なバックスラッシュをエスケープして再試行
+            fixed = re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', json_str)
+            try:
+                return json.loads(fixed), combined
+            except Exception as e:
+                logger.warning(f"Marker JSON parsing failed: {e}")
+
 
     # フォールバック: 通常のJSON抽出
     m = re.search(r"\{.*\}", combined, re.DOTALL)

@@ -2,7 +2,7 @@
 import * as cdk from "aws-cdk-lib";
 import { Aspects } from "aws-cdk-lib";
 import { RapidStack } from "../lib/rapid-stack";
-import { FrontendWafStack } from "../lib/frontend-waf-stack";
+// import { FrontendWafStack } from "../lib/frontend-waf-stack";
 import {
   extractContextParameters,
   resolveParameters,
@@ -21,15 +21,15 @@ const parameters = resolveParameters(contextParams);
 // WAF for frontend
 // 2025/4: Currently, the WAF for CloudFront needs to be created in the North America region (us-east-1), so the stacks are separated
 // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-wafv2-webacl.html
-const waf = new FrontendWafStack(app, `RapidFrontendWafStack`, {
-  env: {
-    account: process.env.CDK_DEFAULT_ACCOUNT,
-    region: "us-east-1",
-  },
-  envPrefix: "",
-  allowedIpV4AddressRanges: parameters.allowedIpV4AddressRanges,
-  allowedIpV6AddressRanges: parameters.allowedIpV6AddressRanges,
-});
+// const waf = new FrontendWafStack(app, `RapidFrontendWafStack`, {
+//   env: {
+//     account: process.env.CDK_DEFAULT_ACCOUNT,
+//     region: "us-east-1",
+//   },
+//   envPrefix: "",
+//   allowedIpV4AddressRanges: parameters.allowedIpV4AddressRanges,
+//   allowedIpV6AddressRanges: parameters.allowedIpV6AddressRanges,
+// });
 
 new RapidStack(app, "RapidStack", {
   env: {
@@ -37,8 +37,8 @@ new RapidStack(app, "RapidStack", {
     region: process.env.CDK_DEFAULT_REGION || "us-west-2",
   },
   crossRegionReferences: true,
-  webAclId: waf.webAclArn.value,
-  enableIpV6: waf.ipV6Enabled,
+  // webAclId: waf.webAclArn.value,
+  // enableIpV6: waf.ipV6Enabled,
   // カスタムパラメータを追加
   parameters: parameters,
 });

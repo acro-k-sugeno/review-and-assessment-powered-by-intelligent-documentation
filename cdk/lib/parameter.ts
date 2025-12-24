@@ -24,13 +24,13 @@ export const parameters = {
   // Bedrock設定
   // Amazon Bedrockを利用するリージョンを指定します
   // ---------------------------------------------------
-  // bedrockRegion: "ap-northeast-1", // Bedrockを利用するリージョン（デフォルト：us-west-2）
+  bedrockRegion: "ap-northeast-1", // Bedrockを利用するリージョン（デフォルト：us-west-2）
   // AI モデル設定
   // デフォルトモデル以外を使用したい場合に設定します
   // 注意: モデルIDのプレフィックス（us., eu., apac.など）はbedrockRegionに対応している必要があります
   // 詳細: https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
   // ---------------------------------------------------
-  // documentProcessingModelId: "global.anthropic.claude-sonnet-4-5-20250929-v1:0", // Claude 4.5 Sonnet (Global)
+  documentProcessingModelId: "global.anthropic.claude-sonnet-4-5-20250929-v1:0", // Claude 4.5 Sonnet (Global)
   // documentProcessingModelId: "us.anthropic.claude-sonnet-4-5-20250929-v1:0", // Claude 4.5 Sonnet (US)
   // documentProcessingModelId: "eu.anthropic.claude-sonnet-4-5-20250929-v1:0", // Claude 4.5 Sonnet (EU)
   // documentProcessingModelId: "jp.anthropic.claude-sonnet-4-5-20250929-v1:0", // Claude 4.5 Sonnet (JP)
@@ -41,7 +41,7 @@ export const parameters = {
   // documentProcessingModelId: "apac.anthropic.claude-3-7-sonnet-20250219-v1:0",  // 日本リージョンでClaude利用する場合
   // documentProcessingModelId: "mistral.mistral-large-2407-v1:0", // Mistral利用する場合
   // documentProcessingModelId: "us.amazon.nova-2-omni-v1:0", // Nova 2 Omni
-  // imageReviewModelId: "global.anthropic.claude-sonnet-4-5-20250929-v1:0", // Claude 4.5 Sonnet (Global)
+  imageReviewModelId: "global.anthropic.claude-sonnet-4-5-20250929-v1:0", // Claude 4.5 Sonnet (Global)
   // imageReviewModelId: "us.anthropic.claude-sonnet-4-5-20250929-v1:0", // Claude 4.5 Sonnet (US)
   // imageReviewModelId: "eu.anthropic.claude-sonnet-4-5-20250929-v1:0", // Claude 4.5 Sonnet (EU)
   // imageReviewModelId: "jp.anthropic.claude-sonnet-4-5-20250929-v1:0", // Claude 4.5 Sonnet (JP)

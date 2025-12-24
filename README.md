@@ -159,6 +159,12 @@ The following parameters can be customized during CDK deployment:
 | **Citations API**         | enableCitations               | Whether to enable Citations API for PDF documents ([AWS announcement](https://aws.amazon.com/about-aws/whats-new/2025/06/citations-api-pdf-claude-models-amazon-bedrock/)) | true (enabled)                             |
 | **Map State Concurrency** | reviewMapConcurrency          | Map State concurrency for the Review Processor (must be configured in consultation with throttling limits)                                                                 | 1                                          |
 | **Map State Concurrency** | checklistInlineMapConcurrency | Inline Map State concurrency for the Checklist Processor (must be configured in consultation with throttling limits)                                                       | 1                                          |
+| **Schedule Settings**     | feedbackAggregatorScheduleExpression | Feedback Aggregator execution schedule (EventBridge Scheduler expression format)                                                                                     | cron(0 2 * * ? *) (Daily at 2:00 UTC)     |
+
+**Schedule Expression Format:**
+- Cron format: `cron(minute hour day month day-of-week year)` - Example: `cron(0 2 * * ? *)` (Daily at 2:00 UTC)
+- Rate format: `rate(value unit)` - Example: `rate(1 day)` (Every day), `rate(12 hours)` (Every 12 hours)
+- Details: [Schedule types on EventBridge Scheduler](https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html)
 
 ### AI Model Customization
 
@@ -180,6 +186,7 @@ This application uses Strands agents with tools such as file reading, so you mus
 - `mistral.mistral-large-2407-v1:0` (Mistral Large 2)
 - `us.anthropic.claude-3-5-sonnet-20241022-v2:0` (Claude 3.5 Sonnet)
 - `us.amazon.nova-premier-v1:0` (Amazon Nova Premier)
+- `us.amazon.nova-2-omni-v1:0` (Amazon Nova 2 Omni)
 
 **Important Notes**:
 
@@ -193,7 +200,7 @@ This application uses Strands agents with tools such as file reading, so you mus
 // cdk/lib/parameter.ts
 export const parameters = {
   documentProcessingModelId: "us.anthropic.claude-sonnet-4-20250514-v1:0", // Claude 4 Sonnet US
-  bedrockRegion: "us-west-2", // Tokyo region
+  bedrockRegion: "us-west-2", // Oregon region
   // ...
 };
 ```

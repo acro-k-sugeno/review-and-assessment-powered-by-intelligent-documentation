@@ -161,6 +161,12 @@ CDK デプロイ時に以下のパラメータをカスタマイズできます:
 | **Citations API**      | enableCitations               | PDF ドキュメントの Citations API を有効にするかどうか ([AWS 発表](https://aws.amazon.com/about-aws/whats-new/2025/06/citations-api-pdf-claude-models-amazon-bedrock/)) | true (有効)                               |
 | **Map State 並行処理** | reviewMapConcurrency          | レビュープロセッサの Map State 並行処理数 (スロットリングと相談して設定が必要)                                                                                         | 1                                         |
 | **Map State 並行処理** | checklistInlineMapConcurrency | チェックリストプロセッサのインライン Map State 並行処理数 (スロットリングと相談して設定が必要)                                                                         | 1                                         |
+| **スケジュール設定**   | feedbackAggregatorScheduleExpression | Feedback Aggregator の実行スケジュール（EventBridge Scheduler expression 形式）                                                                              | cron(0 2 * * ? *) (毎日 2:00 UTC)         |
+
+**Schedule Expression 形式:**
+- Cron 形式: `cron(分 時 日 月 曜日 年)` - 例: `cron(0 2 * * ? *)` (毎日 2:00 UTC)
+- Rate 形式: `rate(値 単位)` - 例: `rate(1 day)` (1 日ごと), `rate(12 hours)` (12 時間ごと)
+- 詳細: [Schedule types on EventBridge Scheduler](https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html)
 
 ### AI モデルのカスタマイズ
 
@@ -182,6 +188,7 @@ CDK デプロイ時に以下のパラメータをカスタマイズできます:
 - `mistral.mistral-large-2407-v1:0` (Mistral Large 2)
 - `us.anthropic.claude-3-5-sonnet-20241022-v2:0` (Claude 3.5 Sonnet)
 - `us.amazon.nova-premier-v1:0` (Amazon Nova Premier)
+- `us.amazon.nova-2-omni-v1:0` (Amazon Nova 2 Omni)
 
 **重要な注意事項**:
 
@@ -194,8 +201,8 @@ CDK デプロイ時に以下のパラメータをカスタマイズできます:
 ```typescript
 // cdk/lib/parameter.ts
 export const parameters = {
-  documentProcessingModelId: "mistral.mistral-large-2407-v1:0", // Mistral Large 2
-  bedrockRegion: "ap-northeast-1", // 東京リージョン
+  documentProcessingModelId: "us.anthropic.claude-sonnet-4-20250514-v1:0", // Claude 4 Sonnet US
+  bedrockRegion: "us-west-2", // オレゴンリージョン
   // ...
 };
 ```

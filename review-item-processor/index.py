@@ -37,6 +37,17 @@ def handler(event, context):
     }
     """
     logger.info(f"[Strands MCP] Received event: {json.dumps(event)}")
+    
+    # Log session and trace information from context
+    session_id = getattr(context, 'session_id', 'N/A')
+    request_headers = getattr(context, 'request_headers', {})
+    trace_id = request_headers.get('X-Amzn-Trace-Id', 'N/A')
+    
+    logger.info(f"AgentCore Session ID: {session_id}")
+    logger.info(f"X-Amzn-Trace-Id: {trace_id}")
+    logger.info(f"reviewJobId: {event.get('reviewJobId', 'N/A')}")
+    logger.info(f"reviewResultId: {event.get('reviewResultId', 'N/A')}")
+    logger.info(f"checkId: {event.get('checkId', 'N/A')}")
 
     # Check required environment variables
     required_vars = ["DOCUMENT_BUCKET", "BEDROCK_REGION"]
@@ -71,9 +82,12 @@ def handler(event, context):
         # The agent.py will automatically detect file types and select the appropriate model
         # Extract tool configuration if available
         tool_configuration = event.get("toolConfiguration")
+        feedback_summary = event.get("feedbackSummary")
         logger.debug(
             f"[DEBUG LAMBDA] Tool configuration: {json.dumps(tool_configuration)}"
         )
+        if feedback_summary:
+            logger.debug(f"[DEBUG LAMBDA] Feedback summary available for check")
 
         review_data = process_review(
             document_bucket=DOCUMENT_BUCKET,
@@ -83,6 +97,7 @@ def handler(event, context):
             language_name=language_name,
             model_id=DOCUMENT_MODEL_ID,  # Default model, will be overridden for images
             toolConfiguration=tool_configuration,
+            feedback_summary=feedback_summary,
         )
 
         # Return results to Step Functions - handle both PDF and image results

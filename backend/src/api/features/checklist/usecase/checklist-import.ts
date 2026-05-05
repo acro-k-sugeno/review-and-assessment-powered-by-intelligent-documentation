@@ -44,8 +44,13 @@ const getColumnIndex = (cellRef: string): number => {
 };
 
 const findEndOfCentralDirectory = (buffer: Buffer): number => {
-  for (let i = buffer.length - 22; i >= 0; i--) {
+  const minOffset = Math.max(0, buffer.length - 0xffff - 22);
+  for (let i = buffer.length - 22; i >= minOffset; i--) {
     if (buffer.readUInt32LE(i) === 0x06054b50) {
+      const commentLength = buffer.readUInt16LE(i + 20);
+      if (i + 22 + commentLength !== buffer.length) {
+        continue;
+      }
       return i;
     }
   }
@@ -62,7 +67,15 @@ const unzipXlsx = (buffer: Buffer): Map<string, Buffer> => {
   const entryCount = buffer.readUInt16LE(endOffset + 10);
   let offset = buffer.readUInt32LE(endOffset + 16);
 
+  if (offset < 0 || offset >= buffer.length) {
+    throw new ValidationError("Invalid xlsx central directory offset");
+  }
+
   for (let i = 0; i < entryCount; i++) {
+    if (offset + 46 > buffer.length) {
+      throw new ValidationError("Invalid xlsx central directory");
+    }
+
     if (buffer.readUInt32LE(offset) !== 0x02014b50) {
       throw new ValidationError("Invalid xlsx central directory");
     }
@@ -77,6 +90,17 @@ const unzipXlsx = (buffer: Buffer): Map<string, Buffer> => {
       .subarray(offset + 46, offset + 46 + fileNameLength)
       .toString("utf8");
 
+    if (
+      offset + 46 + fileNameLength + extraLength + commentLength >
+      buffer.length
+    ) {
+      throw new ValidationError("Invalid xlsx central directory entry");
+    }
+
+    if (localHeaderOffset < 0 || localHeaderOffset + 30 > buffer.length) {
+      throw new ValidationError("Invalid xlsx local header offset");
+    }
+
     if (buffer.readUInt32LE(localHeaderOffset) !== 0x04034b50) {
       throw new ValidationError("Invalid xlsx local header");
     }
@@ -85,6 +109,9 @@ const unzipXlsx = (buffer: Buffer): Map<string, Buffer> => {
     const localExtraLength = buffer.readUInt16LE(localHeaderOffset + 28);
     const dataStart =
       localHeaderOffset + 30 + localNameLength + localExtraLength;
+    if (dataStart + compressedSize > buffer.length) {
+      throw new ValidationError("Invalid xlsx file data");
+    }
     const compressed = buffer.subarray(dataStart, dataStart + compressedSize);
 
     if (compressionMethod === 0) {

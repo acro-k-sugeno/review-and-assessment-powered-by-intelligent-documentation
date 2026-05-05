@@ -40,6 +40,10 @@ export interface CheckRepository {
   bulkStoreCheckListItems(params: {
     items: CheckListItemEntity[];
   }): Promise<void>;
+  replaceCheckListItems(params: {
+    setId: string;
+    items: CheckListItemEntity[];
+  }): Promise<{ deletedCount: number; createdCount: number }>;
   updateDocumentStatus(params: {
     documentId: string;
     status: CHECK_LIST_STATUS;
@@ -593,6 +597,45 @@ export const makePrismaCheckRepository = async (
     }
   };
 
+  const replaceCheckListItems = async (params: {
+    setId: string;
+    items: CheckListItemEntity[];
+  }): Promise<{ deletedCount: number; createdCount: number }> => {
+    const { setId, items } = params;
+
+    return client.$transaction(async (tx) => {
+      const existingCount = await tx.checkList.count({
+        where: { checkListSetId: setId },
+      });
+
+      await tx.checkList.updateMany({
+        where: { checkListSetId: setId },
+        data: { parentId: null },
+      });
+
+      await tx.checkList.deleteMany({
+        where: { checkListSetId: setId },
+      });
+
+      for (const item of items) {
+        await tx.checkList.create({
+          data: {
+            id: item.id,
+            name: item.name,
+            description: item.description ?? "",
+            parentId: item.parentId ?? null,
+            checkListSetId: item.setId,
+          },
+        });
+      }
+
+      return {
+        deletedCount: existingCount,
+        createdCount: items.length,
+      };
+    });
+  };
+
   const updateDocumentStatus = async (params: {
     documentId: string;
     status: CHECK_LIST_STATUS;
@@ -756,6 +799,7 @@ export const makePrismaCheckRepository = async (
     findCheckListSetDetailById,
     storeCheckListItem,
     bulkStoreCheckListItems,
+    replaceCheckListItems,
     updateDocumentStatus,
     findCheckListItemById,
     validateParentItem,

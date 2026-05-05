@@ -15,10 +15,15 @@ interface FetchResponse<T = any> {
 }
 
 // Helper function to attach auth token to fetch requests
-const getAuthHeaders = async (getIdToken: () => Promise<string | null>) => {
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-  };
+const getAuthHeaders = async (
+  getIdToken: () => Promise<string | null>,
+  options: { json?: boolean } = { json: true }
+) => {
+  const headers: HeadersInit = {};
+
+  if (options.json) {
+    headers["Content-Type"] = "application/json";
+  }
 
   const token = await getIdToken();
   if (token) {
@@ -37,7 +42,9 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
     }
 
     const errorData = await response.json().catch(() => ({}));
-    const error = new Error(errorData.message || response.statusText);
+    const error = new Error(
+      errorData.message || errorData.error || response.statusText
+    );
     throw Object.assign(error, {
       status: response.status,
       response,
@@ -200,6 +207,36 @@ const useHttp = () => {
           method: "POST",
           headers,
           body: JSON.stringify(data),
+        });
+
+        const responseData = await handleResponse<RES>(response);
+        return {
+          data: responseData,
+          status: response.status,
+          headers: response.headers,
+          ok: response.ok,
+        };
+      } catch (err) {
+        if (errorProcess) {
+          errorProcess(err);
+        } else {
+          console.error(err);
+        }
+        throw err;
+      }
+    },
+
+    postFormData: async <RES = any>(
+      url: string,
+      data: FormData,
+      errorProcess?: (err: any) => void
+    ): Promise<FetchResponse<RES>> => {
+      try {
+        const headers = await getAuthHeaders(getIdToken, { json: false });
+        const response = await fetch(`${API_ENDPOINT}${url}`, {
+          method: "POST",
+          headers,
+          body: data,
         });
 
         const responseData = await handleResponse<RES>(response);

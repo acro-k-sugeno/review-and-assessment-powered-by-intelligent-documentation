@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useChecklistSetDetail } from "../hooks/useCheckListSetQueries";
 import {
@@ -25,6 +25,7 @@ import {
   HiSparkles,
   HiCog,
   HiDownload,
+  HiUpload,
 } from "react-icons/hi";
 import Button from "../../../components/Button";
 import Tooltip from "../../../components/Tooltip";
@@ -94,6 +95,8 @@ export function CheckListSetDetailPage() {
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
   const [isToolConfigModalOpen, setIsToolConfigModalOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const importFileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
@@ -200,6 +203,59 @@ export function CheckListSetDetailPage() {
     }
   };
 
+  const handleImportClick = () => {
+    if (!checklistSet?.isEditable) {
+      addToast(t("checklist.importExcelNotEditable"), "error");
+      return;
+    }
+    importFileInputRef.current?.click();
+  };
+
+  const handleImportFileChange = (
+    event: ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !id) return;
+
+    showConfirm(t("checklist.importExcelConfirm"), {
+      title: t("common.confirm"),
+      confirmButtonText: t("checklist.importExcel"),
+      onConfirm: async () => {
+        setIsImporting(true);
+        try {
+          const formData = new FormData();
+          formData.append("file", file);
+          const response = await http.postFormData<{
+            success: true;
+            data: { createdCount: number; deletedCount: number };
+          }>(`/checklist-sets/${id}/import`, formData);
+          const { createdCount, deletedCount } = response.data.data;
+          addToast(
+            t("checklist.importExcelSuccess", {
+              createdCount,
+              deletedCount,
+            }),
+            "success"
+          );
+          setSelectedItemIds(new Set());
+          refetchRoot();
+        } catch (error) {
+          console.error(t("common.error"), error);
+          const status = (error as any)?.status;
+          addToast(
+            status === 422
+              ? t("checklist.importExcelNotEditable")
+              : t("checklist.importExcelError"),
+            "error"
+          );
+        } finally {
+          setIsImporting(false);
+        }
+      },
+    });
+  };
+
   const handleToggleSelect = (itemId: string) => {
     setSelectedItemIds((prev) => {
       const newSet = new Set(prev);
@@ -282,21 +338,43 @@ export function CheckListSetDetailPage() {
             )}
         </div>
         <div className="flex space-x-3">
+          <input
+            ref={importFileInputRef}
+            type="file"
+            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            className="hidden"
+            onChange={handleImportFileChange}
+          />
           <Button
             variant="secondary"
             onClick={handleExportExcel}
-            disabled={isExporting}
+            disabled={isExporting || isImporting}
             icon={<HiDownload className="h-5 w-5" />}>
             {isExporting
               ? t("checklist.exportingExcel")
               : t("checklist.exportExcel")}
           </Button>
 
+          <Button
+            variant="secondary"
+            onClick={handleImportClick}
+            disabled={isImporting || !checklistSet?.isEditable}
+            icon={<HiUpload className="h-5 w-5" />}
+            title={
+              checklistSet?.isEditable
+                ? undefined
+                : t("checklist.importExcelNotEditable")
+            }>
+            {isImporting
+              ? t("checklist.importingExcel")
+              : t("checklist.importExcel")}
+          </Button>
+
           {/* 複製ボタン - 常に表示（編集不可でも複製は可能） */}
           <Button
             variant="secondary"
             onClick={handleDuplicateClick}
-            disabled={duplicateStatus === "loading"}
+            disabled={duplicateStatus === "loading" || isImporting}
             icon={<HiDuplicate className="h-5 w-5" />}>
             {t("common.duplicate")}
           </Button>
@@ -306,6 +384,7 @@ export function CheckListSetDetailPage() {
             <Button
               variant="danger"
               onClick={handleDelete}
+              disabled={isImporting}
               icon={<HiTrash className="h-5 w-5" />}>
               {t("common.delete")}
             </Button>

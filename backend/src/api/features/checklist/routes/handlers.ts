@@ -13,6 +13,10 @@ import {
   exportChecklistSetToExcel,
   getChecklistExcelMimeType,
 } from "../usecase/checklist-export";
+import {
+  extractChecklistImportFile,
+  importChecklistSetFromExcel,
+} from "../usecase/checklist-import";
 import { deleteS3Object } from "../../../core/s3";
 import {
   createChecklistItem,
@@ -306,6 +310,28 @@ export const exportChecklistSetHandler = async (
       `attachment; filename*=UTF-8''${encodeURIComponent(result.fileName)}`
     )
     .send(result.buffer);
+};
+
+export const importChecklistSetHandler = async (
+  request: FastifyRequest<{ Params: { setId: string }; Body: Buffer }>,
+  reply: FastifyReply
+): Promise<void> => {
+  const { setId } = request.params;
+  const fileBuffer = extractChecklistImportFile({
+    body: request.body,
+    contentType: request.headers["content-type"],
+  });
+
+  const result = await importChecklistSetFromExcel({
+    checkListSetId: setId,
+    user: request.user!,
+    fileBuffer,
+  });
+
+  reply.code(200).send({
+    success: true,
+    data: result,
+  });
 };
 
 export const getChecklistItemHandler = async (

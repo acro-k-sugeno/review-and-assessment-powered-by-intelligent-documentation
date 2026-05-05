@@ -43,6 +43,14 @@ export function createApp(): FastifyInstance {
     }
   );
 
+  app.addContentTypeParser(
+    /^multipart\/form-data(;.*)?$/i,
+    { parseAs: "buffer" },
+    (_req, body, done) => {
+      done(null, body);
+    }
+  );
+
   // ヘルスチェックエンドポイント
   app.get("/health", async (_, reply) => {
     reply.code(200).send({ status: "ok" });

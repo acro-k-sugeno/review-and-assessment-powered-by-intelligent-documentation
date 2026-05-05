@@ -146,6 +146,10 @@ export class Api extends Construct {
       restApiName: `${stackId}-RAPID-API`,
       description:
         "RAPID (Review & Assessment Powered by Intelligent Documentation) API",
+      binaryMediaTypes: [
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/octet-stream",
+      ],
       deployOptions: {
         stageName: "api",
         tracingEnabled: true,
@@ -181,6 +185,7 @@ export class Api extends Construct {
           "X-Api-Key",
           "X-Amz-Security-Token",
         ],
+        exposeHeaders: ["Content-Disposition"],
       },
       apiKeySourceType: apigateway.ApiKeySourceType.HEADER,
       cloudWatchRole: true,

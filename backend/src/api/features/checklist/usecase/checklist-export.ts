@@ -9,7 +9,6 @@ import {
 } from "../../../core/middleware/authorization";
 import { ChecklistError } from "../../../core/errors/application-errors";
 
-const MAX_EXPORT_DEPTH = 6;
 const EXCEL_MIME_TYPE =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -98,12 +97,6 @@ export const buildChecklistExportRows = (
   const visited = new Set<string>();
 
   const visit = (item: CheckListItemDetail, numbers: number[]): void => {
-    if (numbers.length > MAX_EXPORT_DEPTH) {
-      throw new ChecklistError(
-        "Checklist hierarchy depth exceeds the export limit of 6",
-        "CHECKLIST_EXPORT_DEPTH_EXCEEDED"
-      );
-    }
     if (visited.has(item.id)) {
       throw new ChecklistError(
         "Checklist hierarchy contains a cycle",
@@ -139,13 +132,9 @@ export const buildChecklistExportRows = (
 };
 
 const createWorksheetXml = (rows: ExportRow[]): string => {
+  const maxDepth = Math.max(1, ...rows.map((row) => row.numbers.length));
   const headers = [
-    "項番L1",
-    "項番L2",
-    "項番L3",
-    "項番L4",
-    "項番L5",
-    "項番L6",
+    ...Array.from({ length: maxDepth }, (_, index) => `項番L${index + 1}`),
     "名前",
     "説明",
   ];
@@ -158,14 +147,14 @@ const createWorksheetXml = (rows: ExportRow[]): string => {
     .map((row, index) => {
       const rowIndex = index + 2;
       const cells: string[] = [];
-      for (let i = 0; i < MAX_EXPORT_DEPTH; i++) {
+      for (let i = 0; i < maxDepth; i++) {
         const number = row.numbers[i];
         if (number !== undefined) {
           cells.push(createNumberCell(i + 1, rowIndex, number));
         }
       }
-      cells.push(createStringCell(7, rowIndex, row.name, 2));
-      cells.push(createStringCell(8, rowIndex, row.description, 2));
+      cells.push(createStringCell(maxDepth + 1, rowIndex, row.name, 2));
+      cells.push(createStringCell(maxDepth + 2, rowIndex, row.description, 2));
       return `<row r="${rowIndex}">${cells.join("")}</row>`;
     })
     .join("");
@@ -174,9 +163,9 @@ const createWorksheetXml = (rows: ExportRow[]): string => {
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
   <cols>
-    <col min="1" max="6" width="10" customWidth="1"/>
-    <col min="7" max="7" width="50" customWidth="1"/>
-    <col min="8" max="8" width="80" customWidth="1"/>
+    <col min="1" max="${maxDepth}" width="10" customWidth="1"/>
+    <col min="${maxDepth + 1}" max="${maxDepth + 1}" width="50" customWidth="1"/>
+    <col min="${maxDepth + 2}" max="${maxDepth + 2}" width="80" customWidth="1"/>
   </cols>
   <sheetData>${headerXml}${dataXml}</sheetData>
 </worksheet>`;

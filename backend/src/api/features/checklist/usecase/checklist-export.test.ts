@@ -48,7 +48,7 @@ describe("buildChecklistExportRows", () => {
     ]);
   });
 
-  it("rejects checklist items deeper than six levels", () => {
+  it("allows checklist items deeper than six levels", () => {
     const items = [
       makeItem({ id: "l1", name: "L1" }),
       makeItem({ id: "l2", parentId: "l1", name: "L2" }),
@@ -59,7 +59,11 @@ describe("buildChecklistExportRows", () => {
       makeItem({ id: "l7", parentId: "l6", name: "L7" }),
     ];
 
-    expect(() => buildChecklistExportRows(items)).toThrow(ChecklistError);
+    expect(buildChecklistExportRows(items).at(-1)).toEqual({
+      numbers: [1, 1, 1, 1, 1, 1, 1],
+      name: "L7",
+      description: "",
+    });
   });
 
   it("rejects orphan checklist items", () => {
@@ -85,6 +89,22 @@ describe("createChecklistWorkbookBuffer", () => {
     expect(buffer.includes(Buffer.from("xl/worksheets/sheet1.xml"))).toBe(
       true
     );
+  });
+
+  it("places name and description after the deepest numbering column", () => {
+    const buffer = createChecklistWorkbookBuffer([
+      {
+        numbers: [1, 1, 1],
+        name: "Level 3",
+        description: "Description",
+      },
+    ]);
+    const content = buffer.toString("utf8");
+
+    expect(content).toContain("項番L3");
+    expect(content).not.toContain("項番L4");
+    expect(content).toContain('r="D1"');
+    expect(content).toContain('r="E1"');
   });
 });
 

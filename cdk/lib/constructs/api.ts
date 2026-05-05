@@ -147,6 +147,7 @@ export class Api extends Construct {
       description:
         "RAPID (Review & Assessment Powered by Intelligent Documentation) API",
       binaryMediaTypes: [
+        "multipart/form-data",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "application/octet-stream",
       ],

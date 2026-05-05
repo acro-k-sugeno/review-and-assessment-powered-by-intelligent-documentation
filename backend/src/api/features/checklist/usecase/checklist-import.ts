@@ -34,6 +34,22 @@ const xmlDecode = (value: string): string =>
 const normalizeCellValue = (value: string | undefined): string =>
   (value ?? "").trim();
 
+const normalizeXlsxBuffer = (buffer: Buffer): Buffer => {
+  if (buffer.length >= 4 && buffer.readUInt32LE(0) === 0x04034b50) {
+    return buffer;
+  }
+
+  const text = buffer.toString("utf8").trim();
+  if (/^UEsDB[A-Za-z0-9+/=\r\n]+$/.test(text)) {
+    const decoded = Buffer.from(text.replace(/\s/g, ""), "base64");
+    if (decoded.length >= 4 && decoded.readUInt32LE(0) === 0x04034b50) {
+      return decoded;
+    }
+  }
+
+  throw new ValidationError("Invalid xlsx file");
+};
+
 const getColumnIndex = (cellRef: string): number => {
   const letters = cellRef.match(/^[A-Z]+/)?.[0] ?? "";
   let index = 0;
@@ -58,9 +74,7 @@ const findEndOfCentralDirectory = (buffer: Buffer): number => {
 };
 
 const unzipXlsx = (buffer: Buffer): Map<string, Buffer> => {
-  if (buffer.length < 4 || buffer.readUInt32LE(0) !== 0x04034b50) {
-    throw new ValidationError("Invalid xlsx file");
-  }
+  buffer = normalizeXlsxBuffer(buffer);
 
   const files = new Map<string, Buffer>();
   const endOffset = findEndOfCentralDirectory(buffer);

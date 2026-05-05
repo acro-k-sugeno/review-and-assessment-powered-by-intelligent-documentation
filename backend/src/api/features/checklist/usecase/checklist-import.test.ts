@@ -24,6 +24,17 @@ describe("parseChecklistImportRows", () => {
     ]);
   });
 
+  it("accepts base64 encoded xlsx content", () => {
+    const buffer = createChecklistWorkbookBuffer([
+      { numbers: [1], name: "Root", description: "" },
+    ]);
+    const base64Buffer = Buffer.from(buffer.toString("base64"), "utf8");
+
+    expect(parseChecklistImportRows(base64Buffer)).toEqual([
+      { rowNumber: 2, depth: 1, name: "Root", description: "" },
+    ]);
+  });
+
   it("rejects hierarchy jumps", () => {
     const rows = [
       { rowNumber: 2, depth: 1, name: "Root", description: "" },

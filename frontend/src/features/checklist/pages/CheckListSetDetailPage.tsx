@@ -37,6 +37,41 @@ import { AmbiguityFilter } from "../types";
 import { useBulkAssignToolConfiguration } from "../hooks/useCheckListItemMutations";
 import useHttp from "../../../hooks/useHttp";
 
+const EXCEL_MIME_TYPE =
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+const base64ToBlob = (base64: string): Blob => {
+  const binary = window.atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: EXCEL_MIME_TYPE });
+};
+
+const normalizeExcelBlob = async (blob: Blob): Promise<Blob> => {
+  const buffer = await blob.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  if (
+    bytes.length >= 4 &&
+    bytes[0] === 0x50 &&
+    bytes[1] === 0x4b &&
+    bytes[2] === 0x03 &&
+    bytes[3] === 0x04
+  ) {
+    return blob;
+  }
+
+  const text = await blob.text();
+  const trimmed = text.trim();
+
+  if (/^UEsDB[A-Za-z0-9+/=\r\n]+$/.test(trimmed)) {
+    return base64ToBlob(trimmed.replace(/\s/g, ""));
+  }
+
+  return blob;
+};
+
 /**
  * チェックリストセット詳細ページ
  */
@@ -148,7 +183,8 @@ export function CheckListSetDetailPage() {
       const fileName = encodedFileName
         ? decodeURIComponent(encodedFileName)
         : `${checklistSet?.name || id}.xlsx`;
-      const url = window.URL.createObjectURL(response.data);
+      const excelBlob = await normalizeExcelBlob(response.data);
+      const url = window.URL.createObjectURL(excelBlob);
       const link = document.createElement("a");
       link.href = url;
       link.download = fileName;

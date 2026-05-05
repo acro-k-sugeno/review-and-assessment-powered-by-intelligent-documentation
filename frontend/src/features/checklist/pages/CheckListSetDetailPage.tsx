@@ -24,6 +24,7 @@ import {
   HiDuplicate,
   HiSparkles,
   HiCog,
+  HiDownload,
 } from "react-icons/hi";
 import Button from "../../../components/Button";
 import Tooltip from "../../../components/Tooltip";
@@ -34,6 +35,7 @@ import { mutate } from "swr";
 import { getChecklistSetsKey } from "../hooks/useCheckListSetQueries";
 import { AmbiguityFilter } from "../types";
 import { useBulkAssignToolConfiguration } from "../hooks/useCheckListItemMutations";
+import useHttp from "../../../hooks/useHttp";
 
 /**
  * チェックリストセット詳細ページ
@@ -51,10 +53,12 @@ export function CheckListSetDetailPage() {
   } = useDeleteChecklistSet();
   const { duplicateChecklistSet, status: duplicateStatus } =
     useDuplicateChecklistSet();
-  const { detectAmbiguity, status: detectStatus } = useDetectAmbiguity();
+  const { detectAmbiguity } = useDetectAmbiguity();
+  const http = useHttp();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
   const [isToolConfigModalOpen, setIsToolConfigModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
@@ -128,6 +132,35 @@ export function CheckListSetDetailPage() {
     } catch (error) {
       console.error(t("common.error"), error);
       addToast(t("checklist.ambiguityDetectionError"), "error");
+    }
+  };
+
+  const handleExportExcel = async () => {
+    if (!id) return;
+
+    setIsExporting(true);
+    try {
+      const response = await http.getBlob(`/checklist-sets/${id}/export`);
+      const disposition = response.headers.get("Content-Disposition");
+      const encodedFileName = disposition?.match(
+        /filename\*=UTF-8''([^;]+)/
+      )?.[1];
+      const fileName = encodedFileName
+        ? decodeURIComponent(encodedFileName)
+        : `${checklistSet?.name || id}.xlsx`;
+      const url = window.URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(t("common.error"), error);
+      addToast(t("checklist.exportExcelError"), "error");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -213,6 +246,16 @@ export function CheckListSetDetailPage() {
             )}
         </div>
         <div className="flex space-x-3">
+          <Button
+            variant="secondary"
+            onClick={handleExportExcel}
+            disabled={isExporting}
+            icon={<HiDownload className="h-5 w-5" />}>
+            {isExporting
+              ? t("checklist.exportingExcel")
+              : t("checklist.exportExcel")}
+          </Button>
+
           {/* 複製ボタン - 常に表示（編集不可でも複製は可能） */}
           <Button
             variant="secondary"

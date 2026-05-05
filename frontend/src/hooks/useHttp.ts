@@ -149,6 +149,46 @@ const useHttp = () => {
       }
     },
 
+    getBlob: async (
+      url: string,
+      errorProcess?: (err: any) => void
+    ): Promise<FetchResponse<Blob>> => {
+      try {
+        const headers = await getAuthHeaders(getIdToken);
+        const response = await fetch(`${API_ENDPOINT}${url}`, { headers });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error("認証エラー: ログインが必要です");
+          }
+
+          const errorData = await response.json().catch(() => ({}));
+          const error = new Error(
+            errorData.message || errorData.error || response.statusText
+          );
+          throw Object.assign(error, {
+            status: response.status,
+            response,
+            data: errorData,
+          });
+        }
+
+        return {
+          data: await response.blob(),
+          status: response.status,
+          headers: response.headers,
+          ok: response.ok,
+        };
+      } catch (err) {
+        if (errorProcess) {
+          errorProcess(err);
+        } else {
+          console.error(err);
+        }
+        throw err;
+      }
+    },
+
     post: async <RES = any, DATA = any>(
       url: string,
       data: DATA,

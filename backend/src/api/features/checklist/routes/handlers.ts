@@ -9,6 +9,10 @@ import {
   duplicateChecklistSet,
   startAmbiguityDetection,
 } from "../usecase/checklist-set";
+import {
+  exportChecklistSetToExcel,
+  getChecklistExcelMimeType,
+} from "../usecase/checklist-export";
 import { deleteS3Object } from "../../../core/s3";
 import {
   createChecklistItem,
@@ -282,6 +286,26 @@ export const getChecklistSetByIdHandler = async (
     success: true,
     data: detail,
   });
+};
+
+export const exportChecklistSetHandler = async (
+  request: FastifyRequest<{ Params: { setId: string } }>,
+  reply: FastifyReply
+): Promise<void> => {
+  const { setId } = request.params;
+  const result = await exportChecklistSetToExcel({
+    checkListSetId: setId,
+    user: request.user!,
+  });
+
+  reply
+    .code(200)
+    .header("Content-Type", getChecklistExcelMimeType())
+    .header(
+      "Content-Disposition",
+      `attachment; filename*=UTF-8''${encodeURIComponent(result.fileName)}`
+    )
+    .send(result.buffer);
 };
 
 export const getChecklistItemHandler = async (

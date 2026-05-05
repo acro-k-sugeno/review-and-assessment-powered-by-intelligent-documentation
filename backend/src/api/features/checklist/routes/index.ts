@@ -12,6 +12,7 @@ import {
   getChecklistPresignedUrlHandler,
   getChecklistItemsHandler,
   getChecklistSetByIdHandler,
+  exportChecklistSetHandler,
   updateChecklistItemHandler,
   getAllChecklistSetsHandler,
   duplicateChecklistSetHandler,
@@ -29,6 +30,11 @@ export function registerChecklistRoutes(fastify: FastifyInstance): void {
   // チェックリストセット一覧取得エンドポイント
   fastify.get("/checklist-sets", {
     handler: getAllChecklistSetsHandler,
+  });
+
+  // チェックリストセットExcelエクスポートエンドポイント
+  fastify.get("/checklist-sets/:setId/export", {
+    handler: exportChecklistSetHandler,
   });
 
   // チェックリストセット詳細取得エンドポイント
